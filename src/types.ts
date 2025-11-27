@@ -1,6 +1,6 @@
 export interface AppSettings {
   resolution: '1K' | '2K' | '4K';
-  aspectRatio: 'Auto' | '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  aspectRatio: 'Auto' | '1:1' | '3:4' | '4:3' | '9:16' | '16:9' | '21:9';
   useGrounding: boolean;
   enableThinking: boolean;
   streamResponse: boolean;

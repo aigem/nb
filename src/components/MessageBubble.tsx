@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, Part } from '../types';
-import { User, Sparkles, ChevronDown, ChevronRight, BrainCircuit, Trash2, RotateCcw, Download } from 'lucide-react';
+import { User, Sparkles, ChevronDown, ChevronRight, BrainCircuit, Trash2, RotateCcw, Download, Edit } from 'lucide-react';
 import { useUiStore } from '../store/useUiStore';
 import { downloadImage, openImageInNewTab } from '../utils/imageUtils';
 
@@ -16,6 +16,7 @@ interface Props {
 
 const ThinkingContentItem: React.FC<{ part: Part }> = ({ part }) => {
   const [isImageHovered, setIsImageHovered] = useState(false);
+  const { setPendingReferenceImage } = useUiStore();
 
   if (part.text) {
     return (
@@ -35,36 +36,52 @@ const ThinkingContentItem: React.FC<{ part: Part }> = ({ part }) => {
   }
 
   if (part.inlineData) {
-     return (
-        <div
-            className="relative my-2 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700/50 bg-gray-100 dark:bg-black/20 max-w-sm mx-auto group"
-            onMouseEnter={() => setIsImageHovered(true)}
-            onMouseLeave={() => setIsImageHovered(false)}
-        >
-          <img
-            src={`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`}
-            alt="Thinking process sketch"
-            className="h-auto max-w-full object-contain opacity-80 hover:opacity-100 transition cursor-pointer"
-            loading="lazy"
-            onClick={() => openImageInNewTab(part.inlineData!.mimeType, part.inlineData!.data)}
-            title="点击查看大图"
-          />
+    const handleReEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setPendingReferenceImage({
+        base64Data: part.inlineData!.data,
+        mimeType: part.inlineData!.mimeType,
+        timestamp: Date.now()
+      });
+    };
 
-          {/* Download Button */}
+    return (
+      <div
+        className="relative my-2 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700/50 bg-gray-100 dark:bg-black/20 max-w-sm mx-auto group"
+        onMouseEnter={() => setIsImageHovered(true)}
+        onMouseLeave={() => setIsImageHovered(false)}
+      >
+        <img
+          src={`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`}
+          alt="Thinking process sketch"
+          className="h-auto max-w-full object-contain opacity-80 hover:opacity-100 transition cursor-pointer"
+          loading="lazy"
+          onClick={() => openImageInNewTab(part.inlineData!.mimeType, part.inlineData!.data)}
+          title="点击查看大图"
+        />
+
+        {/* Action Buttons */}
+        <div className={`absolute top-2 right-2 flex gap-2 transition-all ${isImageHovered ? 'opacity-100' : 'opacity-0'}`}>
+          <button
+            onClick={handleReEdit}
+            className="p-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow-lg backdrop-blur-sm transition-all"
+            title="再次编辑"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               downloadImage(part.inlineData!.mimeType, part.inlineData!.data);
             }}
-            className={`absolute top-2 right-2 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white shadow-lg backdrop-blur-sm transition-all ${
-              isImageHovered ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white shadow-lg backdrop-blur-sm transition-all"
             title="下载图片"
           >
             <Download className="h-4 w-4" />
           </button>
         </div>
-      );
+      </div>
+    );
   }
 
   return null;
@@ -72,8 +89,18 @@ const ThinkingContentItem: React.FC<{ part: Part }> = ({ part }) => {
 
 const ImageWithDownload: React.FC<{ part: Part; index: number }> = ({ part, index }) => {
   const [isImageHovered, setIsImageHovered] = useState(false);
+  const { setPendingReferenceImage } = useUiStore();
 
   if (!part.inlineData) return null;
+
+  const handleReEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPendingReferenceImage({
+      base64Data: part.inlineData!.data,
+      mimeType: part.inlineData!.mimeType,
+      timestamp: Date.now()
+    });
+  };
 
   return (
     <div
@@ -91,19 +118,26 @@ const ImageWithDownload: React.FC<{ part: Part; index: number }> = ({ part, inde
         title="点击查看大图"
       />
 
-      {/* Download Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          downloadImage(part.inlineData!.mimeType, part.inlineData!.data);
-        }}
-        className={`absolute top-3 right-3 p-2.5 rounded-lg bg-black/60 hover:bg-black/80 text-white shadow-lg backdrop-blur-sm transition-all ${
-          isImageHovered ? 'opacity-100' : 'opacity-0'
-        }`}
-        title="下载图片"
-      >
-        <Download className="h-5 w-5" />
-      </button>
+      {/* Action Buttons */}
+      <div className={`absolute top-3 right-3 flex gap-2 transition-all ${isImageHovered ? 'opacity-100' : 'opacity-0'}`}>
+        <button
+          onClick={handleReEdit}
+          className="p-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow-lg backdrop-blur-sm transition-all"
+          title="再次编辑"
+        >
+          <Edit className="h-5 w-5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            downloadImage(part.inlineData!.mimeType, part.inlineData!.data);
+          }}
+          className="p-2.5 rounded-lg bg-black/60 hover:bg-black/80 text-white shadow-lg backdrop-blur-sm transition-all"
+          title="下载图片"
+        >
+          <Download className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -194,7 +228,7 @@ export const MessageBubble: React.FC<Props> = ({ message, isLast, isGenerating, 
               // Custom components to ensure styles match the theme
               p: ({children}) => <p className="mb-3 last:mb-0">{children}</p>,
               a: ({href, children}) => (
-                <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                <a href={href} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">
                   {children}
                 </a>
               ),
@@ -202,7 +236,7 @@ export const MessageBubble: React.FC<Props> = ({ message, isLast, isGenerating, 
               ol: ({children}) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
               li: ({children}) => <li className="pl-1">{children}</li>,
               code: ({children}) => (
-                <code className="rounded bg-gray-200 dark:bg-gray-800/50 px-1 py-0.5 font-mono text-sm text-blue-600 dark:text-blue-200">
+                <code className="rounded bg-gray-200 dark:bg-gray-800/50 px-1 py-0.5 font-mono text-sm text-amber-600 dark:text-amber-200">
                   {children}
                 </code>
               ),
@@ -251,7 +285,7 @@ export const MessageBubble: React.FC<Props> = ({ message, isLast, isGenerating, 
     >
       
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/20 mt-1">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-600 to-amber-500 shadow-lg shadow-amber-500/20 mt-1">
           <Sparkles className="h-4 w-4 text-white" />
         </div>
       )}
@@ -260,7 +294,7 @@ export const MessageBubble: React.FC<Props> = ({ message, isLast, isGenerating, 
         <div
           className={`relative rounded-2xl px-5 py-3.5 shadow-sm w-full transition-colors duration-200 ${
             isUser
-              ? 'bg-blue-600 text-white rounded-tr-sm'
+              ? 'bg-amber-600 text-white rounded-tr-sm'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm border border-gray-200 dark:border-gray-700'
           }`}
         >
@@ -281,9 +315,9 @@ export const MessageBubble: React.FC<Props> = ({ message, isLast, isGenerating, 
            {/* Actions */}
            {!actionsDisabled && (
              <div className={`flex items-center gap-1 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0'}`}>
-                <button 
+                <button
                   onClick={() => onRegenerate(message.id)}
-                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
                   title="从此重新生成"
                 >
                   <RotateCcw className="h-3 w-3" />

@@ -1,13 +1,16 @@
 import { PromptItem } from '../types';
 
-const GITHUB_PROMPT_URL = 'https://raw.githubusercontent.com/glidea/banana-prompt-quicker/main/prompts.json';
+// 使用 jsDelivr CDN 加速访问 GitHub 内容（支持国内访问）
+const GITHUB_PROMPT_URL = 'https://cdn.jsdelivr.net/gh/glidea/banana-prompt-quicker@main/prompts.json';
 const API_PROMPT_URL = '/api/prompts';
 const CACHE_KEY = 'prompt_library_cache';
+const CACHE_VERSION = 'v2'; // 更改版本号会清除旧缓存
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
 
 interface CachedData {
   prompts: PromptItem[];
   timestamp: number;
+  version?: string; // 缓存版本号
 }
 
 /**
@@ -75,6 +78,12 @@ function getCachedPrompts(): PromptItem[] | null {
     const data: CachedData = JSON.parse(cached);
     const now = Date.now();
 
+    // 检查缓存版本，版本不匹配则清除旧缓存
+    if (data.version !== CACHE_VERSION) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+
     // 检查缓存是否过期
     if (now - data.timestamp > CACHE_DURATION) {
       return null;
@@ -110,6 +119,7 @@ function cachePrompts(prompts: PromptItem[]): void {
     const data: CachedData = {
       prompts,
       timestamp: Date.now(),
+      version: CACHE_VERSION,
     };
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
   } catch (error) {

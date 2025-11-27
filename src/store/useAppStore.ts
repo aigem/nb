@@ -58,7 +58,7 @@ export const useAppStore = create<AppState>()(
         useGrounding: false,
         enableThinking: true,
         streamResponse: true,
-        customEndpoint: 'https://undyapi.com',
+        customEndpoint: 'https://api.kuai.host',
         modelName: 'gemini-3-pro-image-preview',
         theme: 'system',
       },

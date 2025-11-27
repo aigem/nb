@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { Key, ExternalLink, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { Key, ExternalLink, ChevronDown, ChevronRight, Settings2, X } from 'lucide-react';
 
-export const ApiKeyModal: React.FC = () => {
+interface ApiKeyModalProps {
+  onClose?: () => void;
+}
+
+export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose }) => {
   const { setApiKey, updateSettings, settings, fetchBalance } = useAppStore();
   const [inputKey, setInputKey] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -18,7 +22,7 @@ export const ApiKeyModal: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputKey.trim()) return;
-    
+
     updateSettings({
       customEndpoint: endpoint,
       modelName: model
@@ -26,14 +30,30 @@ export const ApiKeyModal: React.FC = () => {
     setApiKey(inputKey);
     // 立即尝试刷新余额
     setTimeout(() => fetchBalance(), 0);
+
+    // 调用 onClose 如果提供
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-6 sm:p-8 transition-colors duration-200">
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-6 sm:p-8 transition-colors duration-200 relative">
+        {/* Close button (only show if onClose provided) */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            title="关闭"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-blue-50 dark:bg-blue-500/10 p-4 ring-1 ring-blue-200 dark:ring-blue-500/50">
-            <Key className="h-8 w-8 text-blue-600 dark:text-blue-500" />
+          <div className="rounded-full bg-amber-50 dark:bg-amber-500/10 p-4 ring-1 ring-amber-200 dark:ring-amber-500/50">
+            <Key className="h-8 w-8 text-amber-600 dark:text-amber-500" />
           </div>
         </div>
         
@@ -50,7 +70,7 @@ export const ApiKeyModal: React.FC = () => {
               id="apiKey"
               value={inputKey}
               onChange={(e) => setInputKey(e.currentTarget.value)}
-              className="w-full rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+              className="w-full rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
               placeholder="AIzaSy..."
               autoFocus
             />
@@ -63,7 +83,7 @@ export const ApiKeyModal: React.FC = () => {
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="group flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500 transition-all"
             >
-              <div className="flex items-center gap-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:underline">
+              <div className="flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 group-hover:underline">
                 <Settings2 className="h-3 w-3" />
                 <span>高级配置</span>
                 {showAdvanced ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -83,8 +103,8 @@ export const ApiKeyModal: React.FC = () => {
                       type="text"
                       value={endpoint}
                       onChange={(e) => setEndpoint(e.currentTarget.value)}
-                      className="w-full rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:border-blue-500 focus:outline-none"
-                      placeholder="https://undyapi.com"
+                      className="w-full rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:border-amber-500 focus:outline-none"
+                      placeholder="https://api.kuai.host"
                     />
                   </div>
                   <div>
@@ -93,7 +113,7 @@ export const ApiKeyModal: React.FC = () => {
                       type="text"
                       value={model}
                       onChange={(e) => setModel(e.currentTarget.value)}
-                      className="w-full rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:border-amber-500 focus:outline-none"
                       placeholder="gemini-3-pro-image-preview"
                     />
                   </div>
@@ -105,7 +125,7 @@ export const ApiKeyModal: React.FC = () => {
           <button
             type="submit"
             disabled={!inputKey.trim()}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-amber-600 px-4 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             开始创作
           </button>
@@ -113,10 +133,10 @@ export const ApiKeyModal: React.FC = () => {
 
         <div className="mt-6 flex justify-center">
           <a 
-            href="https://vip.undyingapi.com/console/token" 
+            href="https://api.kuai.host/console/token" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center text-sm text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition"
+            className="flex items-center text-sm text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition"
           >
             <span>获取 Gemini API Key</span>
             <ExternalLink className="ml-1 h-3 w-3" />

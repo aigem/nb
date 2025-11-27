@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ImagePlus, X, Square, Gamepad2, Sparkles } from 'lucide-react';
+import { Send, ImagePlus, X, Square, Gamepad2, Sparkles, Layers } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useUiStore } from '../store/useUiStore';
 import { Attachment } from '../types';
@@ -15,13 +15,35 @@ interface Props {
 
 export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArcadeOpen, disabled }) => {
   const { inputText, setInputText } = useAppStore();
-  const { togglePromptLibrary, isPromptLibraryOpen } = useUiStore();
+  const { togglePromptLibrary, isPromptLibraryOpen, batchMode, batchCount, setBatchMode, setBatchCount, pendingReferenceImage, setPendingReferenceImage } = useUiStore();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isQuickPickerOpen, setIsQuickPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
+
+  // 监听待添加的参考图片
+  useEffect(() => {
+    if (pendingReferenceImage && attachments.length < 14) {
+      const { base64Data, mimeType, timestamp } = pendingReferenceImage;
+
+      // 创建一个虚拟 File 对象
+      const fileName = `image-${timestamp}.${mimeType.split('/')[1]}`;
+      const blob = base64ToBlob(`data:${mimeType};base64,${base64Data}`);
+      const file = new File([blob], fileName, { type: mimeType });
+
+      const newAttachment: Attachment = {
+        file,
+        preview: `data:${mimeType};base64,${base64Data}`,
+        base64Data,
+        mimeType
+      };
+
+      setAttachments(prev => [...prev, newAttachment].slice(0, 14));
+      setPendingReferenceImage(null); // 清除待添加图片
+    }
+  }, [pendingReferenceImage, attachments.length, setPendingReferenceImage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Check if device is likely mobile/tablet based on screen width
@@ -166,6 +188,72 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
     <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 pb-safe transition-colors duration-200">
       <div className="mx-auto max-w-4xl">
 
+        {/* Batch Mode Selector */}
+        {!disabled && (
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-2 flex-1 flex-wrap">
+              <button
+                onClick={() => setBatchMode(batchMode === 'off' ? 'normal' : 'off')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  batchMode === 'normal'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                普通批量
+              </button>
+              <button
+                onClick={() => setBatchMode(batchMode === 'multi-image' ? 'off' : 'multi-image')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  batchMode === 'multi-image'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                多图单词
+              </button>
+              <button
+                onClick={() => setBatchMode(batchMode === 'image-multi-prompt' ? 'off' : 'image-multi-prompt')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  batchMode === 'image-multi-prompt'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                图片对多词
+              </button>
+
+              {batchMode === 'normal' && (
+                <div className="flex items-center gap-1 ml-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">数量:</span>
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setBatchCount(num)}
+                      className={`w-7 h-7 rounded text-xs font-medium transition ${
+                        batchCount === num
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {batchMode !== 'off' && (
+                <span className="text-xs text-amber-600 dark:text-amber-400 ml-auto">
+                  {batchMode === 'normal' && `将生成 ${batchCount} 次`}
+                  {batchMode === 'multi-image' && attachments.length > 0 && `将生成 ${attachments.length} 张`}
+                  {batchMode === 'image-multi-prompt' && attachments.length > 0 && `将生成 ${attachments.length} 张（用 --- 分隔多个提示词）`}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Preview Area */}
         {attachments.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pt-3 pb-3 px-3 mb-2">
@@ -190,8 +278,8 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
         <div
           className={`relative flex flex-wrap md:flex-nowrap items-end gap-1 rounded-2xl bg-gray-50 dark:bg-gray-800 p-2 shadow-inner ring-1 transition-all duration-200 ${
             isDragging
-              ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'ring-gray-200 dark:ring-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50'
+              ? 'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-900/20'
+              : 'ring-gray-200 dark:ring-gray-700/50 focus-within:ring-2 focus-within:ring-amber-500/50'
           }`}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -201,8 +289,8 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
 
           {/* Drag Overlay */}
           {isDragging && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-blue-500/10 backdrop-blur-sm border-2 border-dashed border-blue-500">
-              <div className="flex flex-col items-center gap-2 text-blue-600 dark:text-blue-400">
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-amber-500/10 backdrop-blur-sm border-2 border-dashed border-amber-500">
+              <div className="flex flex-col items-center gap-2 text-amber-600 dark:text-amber-400">
                 <ImagePlus className="h-8 w-8" />
                 <span className="text-sm font-medium">松开鼠标以上传图片</span>
               </div>
@@ -220,20 +308,20 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || attachments.length >= 14}
-            className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 transition disabled:opacity-50"
+            className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-amber-600 dark:hover:text-amber-400 transition disabled:opacity-50"
             title="上传图片"
           >
             <ImagePlus className="h-5 w-5" />
           </button>
 
           <button
-            onClick={togglePromptLibrary}
+            onClick={() => setIsQuickPickerOpen(true)}
             className={`mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                isPromptLibraryOpen
+                isQuickPickerOpen
                   ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                   : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
             }`}
-            title={isPromptLibraryOpen ? "关闭提示词库" : "打开提示词库"}
+            title="快速选择提示词 (也可输入 /t)"
           >
             <Sparkles className="h-5 w-5" />
           </button>
@@ -258,7 +346,11 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder="描述一张图片或问一个问题......"
+            placeholder={
+              batchMode === 'image-multi-prompt'
+                ? "输入多个提示词（用 --- 分隔）......"
+                : "描述一张图片或问一个问题......"
+            }
             className="mb-1 max-h-[200px] min-h-10 w-full md:w-full order-first md:order-0 resize-none bg-transparent py-2.5 text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none disabled:opacity-50 field-sizing-content"
             rows={1}
           />
@@ -275,7 +367,7 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
             <button
               onClick={handleSubmit}
               disabled={!inputText.trim() && attachments.length === 0}
-              className="mb-1 ml-auto md:ml-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 disabled:opacity-50 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:shadow-none transition"
+              className="mb-1 ml-auto md:ml-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white shadow-lg shadow-amber-600/20 hover:bg-amber-500 disabled:opacity-50 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:shadow-none transition"
             >
               <Send className="h-5 w-5" />
             </button>
@@ -308,4 +400,16 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = (error) => reject(error);
   });
+};
+
+const base64ToBlob = (dataUrl: string): Blob => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || '';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
 };

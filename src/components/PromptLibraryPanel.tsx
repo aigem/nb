@@ -83,9 +83,9 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
       <div className="fixed right-0 top-0 z-50 h-full w-full sm:w-[600px] bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-out overflow-hidden flex flex-col">
 
         {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-linear-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-amber-50 to-amber-50 dark:from-gray-800 dark:to-gray-900 px-6 py-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <Sparkles className="h-6 w-6 text-amber-600 dark:text-amber-400" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">提示词库</h2>
           </div>
           <button
@@ -105,7 +105,7 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${
                   selectedCategory === cat
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20'
                     : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
                 }`}
               >
@@ -120,7 +120,7 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
           {isLoading ? (
             // 加载状态
             <div className="flex flex-col items-center justify-center h-full gap-3">
-              <Loader2 className="h-10 w-10 text-purple-600 dark:text-purple-400 animate-spin" />
+              <Loader2 className="h-10 w-10 text-amber-600 dark:text-amber-400 animate-spin" />
               <p className="text-sm text-gray-500 dark:text-gray-400">加载提示词中...</p>
             </div>
           ) : error ? (
@@ -132,7 +132,7 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
               </div>
               <button
                 onClick={loadPrompts}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition"
               >
                 <RefreshCw className="h-4 w-4" />
                 重试
@@ -166,7 +166,7 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
               href="https://github.com/glidea/banana-prompt-quicker"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-600 dark:text-purple-400 hover:underline ml-1"
+              className="text-amber-600 dark:text-amber-400 hover:underline ml-1"
             >
               banana-prompt-quicker
             </a>
@@ -190,7 +190,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onSelect }) => {
   return (
     <div
       onClick={() => onSelect(prompt)}
-      className="group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-lg transition-all duration-200 overflow-hidden"
+      className="group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-amber-400 dark:hover:border-amber-600 hover:shadow-lg transition-all duration-200 overflow-hidden"
     >
       {/* 预览图 */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden">
@@ -227,7 +227,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onSelect }) => {
 
         {/* 模式标签 */}
         <div className="absolute top-2 right-2">
-          <span className="px-2 py-1 rounded-md text-xs font-medium bg-purple-600/90 text-white backdrop-blur-sm">
+          <span className="px-2 py-1 rounded-md text-xs font-medium bg-amber-600/90 text-white backdrop-blur-sm">
             {prompt.mode === 'edit' ? '编辑' : '生成'}
           </span>
         </div>
@@ -255,7 +255,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onSelect }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline"
+              className="flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:underline"
             >
               查看详情
               <ExternalLink className="h-3 w-3" />

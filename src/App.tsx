@@ -5,7 +5,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { GlobalDialog } from './components/ui/GlobalDialog';
 import { formatBalance } from './services/balanceService';
-import { Settings, Sun, Moon, Github, ImageIcon, DollarSign, Download, Sparkles } from 'lucide-react';
+import { Settings, Sun, Moon, Github, ImageIcon, DollarSign, Download, Sparkles, Key } from 'lucide-react';
 import { lazyWithRetry, preloadComponents } from './utils/lazyLoadUtils';
 
 // Lazy load components
@@ -16,7 +16,7 @@ const PromptLibraryPanel = lazyWithRetry(() => import('./components/PromptLibrar
 
 const App: React.FC = () => {
   const { apiKey, setApiKey, settings, updateSettings, isSettingsOpen, toggleSettings, imageHistory, balance, fetchBalance, installPrompt, setInstallPrompt } = useAppStore();
-  const { togglePromptLibrary, isPromptLibraryOpen } = useUiStore();
+  const { togglePromptLibrary, isPromptLibraryOpen, showApiKeyModal, setShowApiKeyModal } = useUiStore();
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -125,7 +125,7 @@ const App: React.FC = () => {
       <header className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 px-6 py-4 backdrop-blur-md z-10 transition-colors duration-200">
         <div className="flex items-center gap-3">
           <a 
-            href="https://undyapi.com" 
+            href="https://api.kuai.host" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex h-10 w-10 items-center justify-center overflow-hidden hover:opacity-80 transition-opacity"
@@ -133,88 +133,104 @@ const App: React.FC = () => {
              <img src="/logo.svg" alt="Logo" className="h-full w-full object-cover" />
           </a>
           <div className="hidden sm:block">
-            <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Nano Banana Pro</h1>
+            <h1 className="text-lg font-bold tracking-tight text-amber-600 dark:text-amber-400">Nano Banana Pro</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              由 <a href="https://undyapi.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 hover:underline transition-colors">Undy API</a> 赞助联合开发
+              由 <a href="https://api.kuai.host" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 hover:underline transition-colors">酷爱API</a> 赞助联合开发
             </p>
           </div>
         </div>
-        
-        {apiKey && (
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Balance Display - Desktop only */}
-            {balance && (
-                <div 
-                    onClick={() => fetchBalance()}
-                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition mr-2"
-                    title="点击刷新余额"
-                >
-                    <DollarSign className="h-4 w-4 text-green-600 dark:text-green-500" />
-                    <span className={balance.remaining < 1 ? "text-red-500" : ""}>
-                        {formatBalance(balance.remaining, balance.isUnlimited)}
-                    </span>
-                </div>
-            )}
 
-            {installPrompt && (
-              <button
-                onClick={handleInstallClick}
-                className="flex rounded-lg p-2 text-purple-600 dark:text-purple-400 transition hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                title="安装应用"
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Balance Display - Only show when has API key */}
+          {apiKey && balance && (
+              <div
+                  onClick={() => fetchBalance()}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition mr-2"
+                  title="点击刷新余额"
               >
-                <Download className="h-6 w-6 animate-attract" />
-              </button>
-            )}
+                  <DollarSign className="h-4 w-4 text-green-600 dark:text-green-500" />
+                  <span className={balance.remaining < 1 ? "text-red-500" : ""}>
+                      {formatBalance(balance.remaining, balance.isUnlimited)}
+                  </span>
+              </div>
+          )}
 
-            <a
-              href="https://github.com/aigem/nb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="GitHub 仓库"
-            >
-              <Github className="h-6 w-6 animate-heartbeat-mixed group-hover:animate-none" />
-            </a>
+          {installPrompt && (
             <button
-              onClick={() => setIsImageHistoryOpen(true)}
-              className="relative rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="图片历史"
+              onClick={handleInstallClick}
+              className="flex rounded-lg p-2 text-amber-600 dark:text-amber-400 transition hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              title="安装应用"
             >
-              <ImageIcon className="h-6 w-6" />
-              {imageHistory.length > 0 && (
-                <span className="absolute top-1 right-1 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-              )}
+              <Download className="h-6 w-6 animate-attract" />
             </button>
-            <button
-              onClick={togglePromptLibrary}
-              className={`rounded-lg p-2 transition focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                isPromptLibraryOpen
-                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              title="提示词库"
-            >
-              <Sparkles className="h-6 w-6" />
-            </button>
-            <button
-              onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
-              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="切换主题"
-            >
-              {settings.theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
-            </button>
+          )}
+
+          <a
+            href="https://github.com/aigem/nb"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            title="GitHub 仓库"
+          >
+            <Github className="h-6 w-6 animate-heartbeat-mixed group-hover:animate-none" />
+          </a>
+
+          {/* API Key button - Always visible for setting/changing key */}
+          <button
+            onClick={() => setShowApiKeyModal(true)}
+            className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            title={apiKey ? "更换 API Key" : "设置 API Key"}
+          >
+            <Key className="h-6 w-6" />
+          </button>
+
+          {apiKey && (
+            <>
+              <button
+                onClick={() => setIsImageHistoryOpen(true)}
+                className="relative rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                title="图片历史"
+              >
+                <ImageIcon className="h-6 w-6" />
+                {imageHistory.length > 0 && (
+                  <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={togglePromptLibrary}
+                className={`rounded-lg p-2 transition focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                  isPromptLibraryOpen
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                }`}
+                title="提示词库"
+              >
+                <Sparkles className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
+            className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            title="切换主题"
+          >
+            {settings.theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+          </button>
+
+          {apiKey && (
             <button
               onClick={toggleSettings}
-              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
               title="设置"
             >
               <Settings className="h-6 w-6" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       {/* Main Content */}
@@ -271,7 +287,7 @@ const App: React.FC = () => {
 
       {/* Modals */}
       <Suspense fallback={null}>
-        {!apiKey && <ApiKeyModal />}
+        {showApiKeyModal && <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />}
         {isImageHistoryOpen && (
           <ImageHistoryPanel isOpen={isImageHistoryOpen} onClose={() => setIsImageHistoryOpen(false)} />
         )}

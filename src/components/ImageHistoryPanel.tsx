@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useUiStore } from '../store/useUiStore';
 import { get as getItem } from 'idb-keyval';
-import { X, Download, Trash2, ImageIcon, Search, Copy, ArrowRight, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
+import { X, Download, Trash2, ImageIcon, Search, Copy, ArrowRight, ArrowLeft, RefreshCw, Loader2, Edit } from 'lucide-react';
 import { ImageHistoryItem } from '../types';
 import { downloadImage } from '../utils/imageUtils';
 
@@ -13,7 +13,7 @@ interface Props {
 
 export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
   const { imageHistory, clearImageHistory, deleteImageFromHistory, setInputText, cleanInvalidHistory } = useAppStore();
-  const { showDialog, addToast } = useUiStore();
+  const { showDialog, addToast, setPendingReferenceImage } = useUiStore();
   const [selectedImage, setSelectedImage] = useState<ImageHistoryItem | null>(null);
   const [fullResData, setFullResData] = useState<string | null>(null);
   const [loadingFullRes, setLoadingFullRes] = useState(false);
@@ -136,6 +136,35 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
     addToast('提示词已复制', 'success');
   };
 
+  const handleReEdit = async (image: ImageHistoryItem, e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
+    let data: string | undefined;
+
+    // 优先使用当前已加载的大图
+    if (selectedImage?.id === image.id && fullResData) {
+      data = fullResData;
+    } else {
+      // 否则异步从 IDB 获取
+      try {
+        data = await getItem(`image_data_${image.id}`);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    if (data) {
+      setPendingReferenceImage({
+        base64Data: data,
+        mimeType: image.mimeType,
+        timestamp: Date.now()
+      });
+      onClose(); // Close panel to return to chat
+      addToast('图片已添加为参考图', 'success');
+    } else {
+      addToast('加载失败：找不到原图', 'error');
+    }
+  };
+
   const handleClearHistory = () => {
     showDialog({
       type: 'confirm',
@@ -165,7 +194,7 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex flex-col border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 z-10">
           <div className="flex items-center justify-between p-4 pb-2">
             <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <ImageIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">图片历史</h2>
               <span className="text-sm text-gray-500 dark:text-gray-400">({filteredHistory.length})</span>
             </div>
@@ -197,7 +226,7 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
                 placeholder="搜索提示词..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.currentTarget.value)}
-                className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-gray-500"
+                className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-amber-500 dark:text-white placeholder-gray-500"
               />
               {searchTerm && (
                 <button
@@ -225,7 +254,7 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
               {filteredHistory.map((image) => (
                 <div
                   key={image.id}
-                  className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-blue-500 transition shadow-sm"
+                  className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-amber-500 transition shadow-sm"
                   onClick={() => setSelectedImage(image)}
                 >
                   <img
@@ -240,6 +269,13 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
 
                   {/* Overlay Buttons */}
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => handleReEdit(image, e)}
+                      className="p-1.5 rounded-md bg-amber-600/90 hover:bg-amber-500 text-white backdrop-blur-sm transition-colors"
+                      title="再次编辑"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </button>
                     <button
                       onClick={(e) => handleDownload(image, e)}
                       className="p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
@@ -352,20 +388,27 @@ export const ImageHistoryPanel: React.FC<Props> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
+                 <button
+                  onClick={() => handleReEdit(selectedImage)}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition"
+                 >
+                   <Edit className="h-4 w-4" />
+                   <span>再次编辑</span>
+                 </button>
                  <button
                   onClick={() => handleReusePrompt(selectedImage.prompt)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 rounded-lg font-medium transition"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 rounded-lg font-medium transition"
                  >
                    <RefreshCw className="h-4 w-4" />
-                   <span>使用此提示词</span>
+                   <span>用提示词</span>
                  </button>
                  <button
                   onClick={() => handleDownload(selectedImage)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-700 hover:bg-gray-600 text-white dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg font-medium transition"
                  >
                    <Download className="h-4 w-4" />
-                   <span>下载图片</span>
+                   <span>下载</span>
                  </button>
               </div>
             </div>

@@ -160,7 +160,7 @@ export const SettingsPanel: React.FC = () => {
                 }}
                 className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                   settings.resolution === res
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
                     : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'
                 }`}
               >
@@ -170,11 +170,38 @@ export const SettingsPanel: React.FC = () => {
           </div>
         </section>
 
+        {/* Model Selection */}
+        <section>
+          <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">模型选择</label>
+          <div className="space-y-2">
+            {([
+              { name: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro' },
+              { name: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash (Preview)' },
+              { name: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash' }
+            ] as const).map((model) => {
+              const isActive = (settings.modelName || 'gemini-3-pro-image-preview') === model.name;
+              return (
+                <button
+                  key={model.name}
+                  onClick={() => updateSettings({ modelName: model.name })}
+                  className={`w-full rounded-lg border px-4 py-2.5 text-sm font-medium text-left transition ${
+                    isActive
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'
+                  }`}
+                >
+                  {model.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Aspect Ratio */}
         <section>
           <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">长宽比</label>
           <div className="grid grid-cols-3 gap-2">
-            {(['Auto', '1:1', '3:4', '4:3', '9:16', '16:9'] as const).map((ratio) => {
+            {(['Auto', '1:1', '3:4', '4:3', '9:16', '16:9', '21:9'] as const).map((ratio) => {
               const isActive = settings.aspectRatio === ratio;
               const ratioPreviewStyles: Record<string, string> = {
                 'Auto': 'w-6 h-6 border-dashed',
@@ -183,6 +210,7 @@ export const SettingsPanel: React.FC = () => {
                 '4:3': 'w-7 h-5',
                 '9:16': 'w-4 h-7',
                 '16:9': 'w-7 h-4',
+                '21:9': 'w-8 h-3',
               };
 
               return (
@@ -191,13 +219,13 @@ export const SettingsPanel: React.FC = () => {
                   onClick={() => updateSettings({ aspectRatio: ratio })}
                   className={`flex flex-col items-center justify-center gap-2 rounded-lg border p-3 transition ${
                     isActive
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
                       : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900'
                   }`}
                 >
                   <div
                     className={`rounded-sm border-2 ${
-                      isActive ? 'border-blue-400 bg-blue-100 dark:bg-blue-400/20' : 'border-gray-400 dark:border-gray-600 bg-gray-200 dark:bg-gray-800'
+                      isActive ? 'border-amber-400 bg-amber-100 dark:bg-amber-400/20' : 'border-gray-400 dark:border-gray-600 bg-gray-200 dark:bg-gray-800'
                     } ${ratioPreviewStyles[ratio]}`}
                   />
                   <span className="text-xs font-medium">{ratio}</span>
@@ -218,7 +246,7 @@ export const SettingsPanel: React.FC = () => {
                 onChange={(e) => updateSettings({ useGrounding: (e.target as HTMLInputElement).checked })}
                 className="sr-only peer"
               />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-blue-500/50 peer-checked:bg-blue-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
             </div>
           </label>
           <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
@@ -237,7 +265,7 @@ export const SettingsPanel: React.FC = () => {
                 onChange={(e) => updateSettings({ enableThinking: (e.target as HTMLInputElement).checked })}
                 className="sr-only peer"
               />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-blue-500/50 peer-checked:bg-blue-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
             </div>
           </label>
           <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
@@ -269,7 +297,7 @@ export const SettingsPanel: React.FC = () => {
                 }}
                  className="sr-only peer"
               />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-blue-500/50 peer-checked:bg-blue-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
             </div>
           </label>
           <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
@@ -338,30 +366,32 @@ export const SettingsPanel: React.FC = () => {
                 <span>清除对话</span>
             </button>
 
-            <button
-                onClick={() => {
-                    showDialog({
-                        type: 'confirm',
-                        title: '移除 API Key',
-                        message: "您确定要移除您的 API Key 吗？您的聊天记录将被保留。",
-                        confirmLabel: "移除",
-                        onConfirm: () => {
-                            removeApiKey();
-                            addToast("API Key 已移除", 'info');
-                        }
-                    });
-                }}
-                className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-            >
-                <LogOut className="h-4 w-4" />
-                <span>清除 API Key</span>
-            </button>
+            {apiKey && (
+              <button
+                  onClick={() => {
+                      showDialog({
+                          type: 'confirm',
+                          title: '移除 API Key',
+                          message: "您确定要移除您的 API Key 吗？您的聊天记录将被保留。",
+                          confirmLabel: "移除",
+                          onConfirm: () => {
+                              removeApiKey();
+                              addToast("API Key 已移除", 'info');
+                          }
+                      });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              >
+                  <LogOut className="h-4 w-4" />
+                  <span>清除 API Key</span>
+              </button>
+            )}
         </section>
 
         {/* Info */}
         <div className="mt-1 pb-4 text-center text-[10px] text-gray-400 dark:text-gray-600 space-y-1">
            <p>模型: {settings.modelName || 'gemini-3-pro-image-preview'}</p>
-           <p className="truncate px-4">接口地址: {settings.customEndpoint || 'https://undyapi.com'}</p>
+           <p className="truncate px-4">接口地址: {settings.customEndpoint || 'https://api.kuai.host'}</p>
         </div>
       </div>
     </div>

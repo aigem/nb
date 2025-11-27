@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useUiStore } from '../store/useUiStore';
 import { InputArea } from './InputArea';
 import { ErrorBoundary } from './ErrorBoundary';
 import { streamGeminiResponse, generateContent } from '../services/geminiService';
@@ -26,9 +27,12 @@ export const ChatInterface: React.FC = () => {
     sliceMessages,
     fetchBalance
   } = useAppStore();
-  
+
+  const { batchMode, batchCount, setBatchMode, addToast, setShowApiKeyModal } = useUiStore();
+
   const [showArcade, setShowArcade] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -62,8 +66,87 @@ export const ChatInterface: React.FC = () => {
   }, [messages, isLoading, showArcade]);
 
   const handleSend = async (text: string, attachments: Attachment[]) => {
-    if (!apiKey) return;
+    // 检查 API Key
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+      addToast('请先输入 API Key', 'error');
+      return;
+    }
 
+    // 批量生成处理
+    if (batchMode !== 'off') {
+      let tasks: Array<{ text: string; attachments: Attachment[] }> = [];
+
+      if (batchMode === 'normal') {
+        // 普通批量：重复 N 次
+        for (let i = 0; i < batchCount; i++) {
+          tasks.push({ text, attachments });
+        }
+      } else if (batchMode === 'multi-image') {
+        // 多图单词：每张图片单独生成
+        if (attachments.length === 0) {
+          addToast('请至少上传一张图片以使用多图单词模式', 'error');
+          return;
+        }
+        tasks = attachments.map(att => ({
+          text,
+          attachments: [att]
+        }));
+      } else if (batchMode === 'image-multi-prompt') {
+        // 图片对多词：每张图片配对一个提示词
+        if (attachments.length === 0) {
+          addToast('请至少上传一张图片以使用图片对多词模式', 'error');
+          return;
+        }
+        if (!text.trim()) {
+          addToast('请输入提示词（多个提示词用 --- 分隔）', 'error');
+          return;
+        }
+
+        // 分割提示词（使用 --- 作为分隔符）
+        const prompts = text.split(/---+/).map(p => p.trim()).filter(p => p.length > 0);
+
+        if (prompts.length === 0) {
+          addToast('请输入有效的提示词', 'error');
+          return;
+        }
+
+        // 每张图片配对一个提示词（如果提示词不够，循环使用）
+        tasks = attachments.map((att, index) => ({
+          text: prompts[index % prompts.length],
+          attachments: [att]
+        }));
+      }
+
+      // 执行批量任务
+      setBatchProgress({ current: 0, total: tasks.length });
+      addToast(`开始批量生成 ${tasks.length} 张图片`, 'info');
+
+      for (let i = 0; i < tasks.length; i++) {
+        setBatchProgress({ current: i + 1, total: tasks.length });
+        try {
+          await executeSingleGeneration(tasks[i].text, tasks[i].attachments);
+          // 每个任务之间稍作延迟，避免请求过快
+          if (i < tasks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          console.error(`批量任务 ${i + 1} 失败:`, error);
+          // 继续执行下一个任务
+        }
+      }
+
+      setBatchProgress({ current: 0, total: 0 });
+      setBatchMode('off'); // 完成后自动关闭批量模式
+      addToast(`批量生成完成！共生成 ${tasks.length} 张图片`, 'success');
+      return;
+    }
+
+    // 单次生成
+    await executeSingleGeneration(text, attachments);
+  };
+
+  const executeSingleGeneration = async (text: string, attachments: Attachment[]) => {
     // Capture the current messages state *before* adding the new user message.
     // This allows us to generate history up to this point.
     const currentMessages = useAppStore.getState().messages;
@@ -271,11 +354,31 @@ export const ChatInterface: React.FC = () => {
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 space-y-8 scroll-smooth overscroll-y-contain"
       >
+        {/* Batch Progress Indicator */}
+        {batchProgress.total > 0 && (
+          <div className="sticky top-0 z-10 mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                批量生成进度
+              </span>
+              <span className="text-sm text-amber-700 dark:text-amber-300">
+                {batchProgress.current} / {batchProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2">
+              <div
+                className="bg-amber-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center opacity-40 select-none">
             <div className="mb-6 rounded-3xl bg-gray-50 dark:bg-gray-900 p-8 shadow-2xl ring-1 ring-gray-200 dark:ring-gray-800 transition-colors duration-200">
-               <Sparkles className="h-16 w-16 text-blue-500 mb-4 mx-auto animate-pulse-fast" />
-               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Gemini 3 Pro</h3>
+               <Sparkles className="h-16 w-16 text-amber-500 mb-4 mx-auto animate-pulse-fast" />
+               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Nano Banana Pro</h3>
                <p className="max-w-xs text-sm text-gray-500 dark:text-gray-400">
                  开始输入以创建图像，通过对话编辑它们，或询问复杂的问题。
                </p>
