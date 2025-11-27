@@ -52,3 +52,5 @@ out
 Thumbs.db
 
 dev-dist
+
+cc_start.sh
