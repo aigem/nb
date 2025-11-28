@@ -5,6 +5,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { GlobalDialog } from './components/ui/GlobalDialog';
 import { formatBalance } from './services/balanceService';
+import { preloadPrompts } from './services/promptService';
 import { Settings, Sun, Moon, Github, ImageIcon, DollarSign, Download, Sparkles, Key } from 'lucide-react';
 import { lazyWithRetry, preloadComponents } from './utils/lazyLoadUtils';
 
@@ -52,7 +53,7 @@ const App: React.FC = () => {
     setInstallPrompt(null);
   };
 
-  // Preload components after mount
+  // Preload components and prompt data after mount
   useEffect(() => {
     preloadComponents([
       () => import('./components/ApiKeyModal'),
@@ -68,6 +69,9 @@ const App: React.FC = () => {
       () => import('./components/games/LifeGame'),
       () => import('./components/games/Puzzle2048')
     ]);
+
+    // Preload prompt library data in background
+    preloadPrompts();
   }, []);
   const [mounted, setMounted] = useState(false);
   const [isImageHistoryOpen, setIsImageHistoryOpen] = useState(false);
@@ -221,15 +225,17 @@ const App: React.FC = () => {
             {settings.theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
           </button>
 
-          {apiKey && (
-            <button
-              onClick={toggleSettings}
-              className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              title="设置"
-            >
-              <Settings className="h-6 w-6" />
-            </button>
-          )}
+          <button
+            onClick={toggleSettings}
+            className={`rounded-lg p-2 transition focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+              isSettingsOpen
+                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+            }`}
+            title="设置"
+          >
+            <Settings className="h-6 w-6" />
+          </button>
         </div>
       </header>
 
@@ -264,19 +270,19 @@ const App: React.FC = () => {
             }
           }}
         >
-           <div 
+           <div
              className={`
-               w-full h-full sm:w-80 bg-white dark:bg-gray-950 
+               w-[90%] max-w-sm h-full sm:w-80 bg-white dark:bg-gray-950
                shadow-2xl sm:shadow-none
                overflow-y-auto overflow-x-hidden border-l border-gray-200 dark:border-gray-800 sm:border-none
-               
+
                transition-transform duration-300 ease-in-out
                ${isSettingsOpen ? 'translate-x-0' : 'translate-x-full'}
                sm:translate-x-0
              `}
              onClick={(e) => e.stopPropagation()}
            >
-              <div className="p-4 w-full">
+              <div className="p-3 sm:p-4 w-full">
                 <Suspense fallback={<div className="p-4 text-center text-gray-500">加载中...</div>}>
                   <SettingsPanel />
                 </Suspense>

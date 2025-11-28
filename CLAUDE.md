@@ -8,7 +8,8 @@ nbDraw (Nano Banana Pro) is a pure frontend web application built with React/Pre
 
 **Key Features:**
 - **Multimodal Chat**: Text and image inputs with streaming responses
-- **Batch Generation**: Three modes - Normal batch, Multi-image single prompt, Image-multi-prompt
+- **Pipeline Orchestration**: Serial and parallel image generation workflows with step-level model selection
+- **Batch Generation**: Normal batch mode for repeated generations
 - **Image Re-editing**: Click generated images to use as reference in new generations
 - **Prompt Library**: Built-in curated prompt templates from GitHub
 - **Quick Prompt Picker**: Trigger with `/t` for fast prompt selection
@@ -57,38 +58,107 @@ The application uses two separate Zustand stores:
 2. **`useUiStore`** (`src/store/useUiStore.ts`) - Ephemeral UI state:
    - Modal/panel visibility
    - Toasts and dialogs
-   - Batch generation mode (`'off' | 'normal' | 'multi-image' | 'image-multi-prompt'`)
+   - Batch generation mode (`'off' | 'normal'`)
    - Pending reference image for re-editing
    - Temporary references (attachments, abort controllers)
    - NOT persisted
 
-### Batch Generation Modes
+### Pipeline Orchestration
 
-The application supports three batch generation modes (configured in `InputArea.tsx`):
+The application supports advanced pipeline orchestration for complex image generation workflows (`PipelineModal.tsx`, `ChatInterface.tsx`):
 
-1. **Normal Batch** (`'normal'`):
-   - Repeat the same prompt + images N times (1-4)
-   - User selects count via number buttons
-   - Example: Generate 4 variations of the same concept
+**Execution Modes:**
 
-2. **Multi-Image Single Prompt** (`'multi-image'`):
-   - One prompt applied to each uploaded image separately
-   - Generates N images (where N = number of attachments)
-   - Example: Same style applied to multiple reference images
+1. **Serial Mode** (`'serial'`):
+   - Steps execute sequentially
+   - Each step uses the previous step's output as input
+   - Use case: Progressive refinement, style transformation
+   - Example: Photo → Sketch → Watercolor → Enhanced Details
+   - Failure strategy: One step fails, entire pipeline stops
 
-3. **Image-Multi-Prompt** (`'image-multi-prompt'`):
-   - Each image paired with a different prompt
-   - Prompts separated by commas or newlines
-   - If fewer prompts than images, prompts cycle/repeat
-   - Example: 3 images with prompts "A, B, C" → Image1+A, Image2+B, Image3+C
+2. **Parallel Mode** (`'parallel'`):
+   - All steps execute simultaneously
+   - All steps share the same initial images
+   - Use case: Multi-style exploration, variant generation
+   - Example: Photo → [Anime, Oil Painting, Cyberpunk, Minimalist] (all at once)
+   - Failure strategy: Individual failures don't affect other tasks
+   - **Display**: All generated images appear in a single model message
 
-All batch tasks execute sequentially with 500ms delay between generations to avoid rate limiting.
+**Step-Level Features:**
+- **Model Selection**: Each step can specify a different model (Gemini 3 Pro, 2.5 Flash, etc.)
+- **Custom Prompts**: Each step has independent prompt input
+- **Reordering**: Serial mode supports step reordering (up/down buttons)
+- **Multi-Image Support**: Supports 1-14 initial reference images
+
+**Preset Templates:**
+- 风格迁移 (Style Transfer) - Serial, 3 steps
+- 渐进优化 (Progressive Enhancement) - Serial, 3 steps
+- 多风格探索 (Multi-Style Exploration) - Parallel, 4 steps
+
+**Implementation Details:**
+- Pipeline state stored in `useUiStore` (ephemeral)
+- Execution engine: `executeSerialPipeline()` and `executeParallelPipeline()` in `ChatInterface.tsx`
+- Model switching: Temporarily switches settings per step, restores after completion
+- Progress tracking: Reuses batch progress bar
+
+### Batch Generation Mode
+
+The application also supports simple batch generation (`InputArea.tsx`):
+
+**Normal Batch** (`'normal'`):
+- Repeat the same prompt + images N times (1-4)
+- User selects count via number buttons
+- Example: Generate 4 random variations of the same concept
+- All batch tasks execute sequentially with 500ms delay between generations to avoid rate limiting
 
 ### Image History Storage Pattern
 Images use a split storage approach to optimize performance:
 - **State (Zustand)**: Stores thumbnails (~200x200px) and metadata
 - **IndexedDB**: Stores full-resolution images keyed by `image_data_${id}`
 - **Migration**: `cleanInvalidHistory()` migrates old format (full images in state) to new format
+
+## Prompt Library Data Management
+
+### Prompt Service (`src/services/promptService.ts`)
+
+The prompt library uses a robust multi-layer caching and failover system for optimal performance and reliability:
+
+**Data Sources (Priority Order):**
+1. `/api/prompts` - Vercel Edge Function with CDN caching (production) or Vite proxy to jsDelivr (development)
+2. `https://cdn.jsdelivr.net/gh/...` - jsDelivr CDN (国内访问友好)
+3. `https://raw.githubusercontent.com/...` - GitHub Raw (备用)
+4. `https://glidea.github.io/...` - GitHub Pages (最后备用)
+
+**Caching Strategy (3-Tier):**
+1. **Memory Cache** (fastest, 7 days TTL)
+   - In-memory array of prompts
+   - Zero parsing overhead
+   - Cleared on page refresh
+
+2. **localStorage Cache** (persistent, 7 days TTL)
+   - Survives page refresh
+   - Versioned cache (v3) - auto-clears on version mismatch
+   - JSON parsing only when memory cache misses
+
+3. **Stale Cache Fallback**
+   - If all network sources fail
+   - Returns expired cache data
+   - Graceful degradation
+
+**Preloading:**
+- Automatic background preload 2 seconds after app mount
+- Non-blocking, silent failure
+- Ensures instant open on first user interaction
+
+**Failover Mechanism:**
+- Sequential source attempts with detailed error logging
+- 10-second timeout per source
+- Continues to next source on failure
+- Aggregated error reporting
+
+**Development Environment:**
+- Vite proxy configured: `/api/prompts` → jsDelivr CDN
+- No need for Vercel deployment to test locally
 
 ## API Integration
 
@@ -166,6 +236,38 @@ The application uses a **black-gold aesthetic** with amber (#F59E0B) as the prim
 - Background: Black/Dark gray to White gradient
 - All interactive elements use amber for hover/focus states
 
+### Mobile Responsiveness
+The application is fully optimized for mobile devices with responsive design:
+
+**Settings Panel Mobile Optimization:**
+- Always accessible via Settings button in header (no longer requires API key)
+- Slides in from right as 90% width overlay (shows backdrop on left)
+- Compact spacing and font sizes on mobile (using Tailwind `sm:` breakpoints)
+- Touch-friendly buttons and controls (minimum 40px touch targets)
+- Sticky header with close button for easy dismissal
+- Smooth slide-in/slide-out animations (300ms transition)
+- Backdrop click to close on mobile
+
+**Mobile-Specific Features:**
+- Text sizes scale down appropriately: `text-xs sm:text-sm`, `text-[10px] sm:text-xs`
+- Icon sizes: `h-3.5 w-3.5 sm:h-4 sm:w-4` for compact display
+- Padding: `p-2 sm:p-3`, `p-2.5 sm:p-3` for tighter mobile layouts
+- Gaps: `gap-1.5 sm:gap-2` for optimized spacing
+- Toggle switches scaled to mobile: `h-5 w-9 sm:h-6 sm:w-11`
+- Bottom safe area support with `pb-safe` class
+- Settings button shows active state (amber highlight) when panel is open
+
+**Responsive Breakpoints:**
+- Mobile: < 640px (compact, touch-optimized)
+- Desktop: ≥ 640px (spacious, mouse-optimized)
+
+**Key Mobile UX Patterns:**
+- Full-height overlay panels on mobile
+- Backdrop dimming with blur effect
+- Gesture-friendly dismiss (backdrop tap)
+- Reduced animation duration for snappier feel
+- Always-visible settings access (not hidden behind API key requirement)
+
 ## Key User Features
 
 ### Image Re-editing
@@ -217,24 +319,39 @@ Implementation uses `pendingReferenceImage` state in `useUiStore` that `InputAre
    - Hover over thumbnail → click amber edit button
    - OR click thumbnail → click "再次编辑" in lightbox modal
 
+### Testing Pipeline Orchestration
+
+1. **Serial Mode**:
+   - Click "批量编排(实验功能)" button (purple)
+   - Select "串行模式"
+   - Upload 1 image
+   - Add 3 steps with custom prompts
+   - Optionally select different models per step
+   - Click "开始执行"
+   - Observe step-by-step transformation
+
+2. **Parallel Mode**:
+   - Click "批量编排(实验功能)" button
+   - Select "并行模式"
+   - Upload 1 image
+   - Click "多风格探索" template
+   - Click "开始执行"
+   - **Expected**: All 4 generated images appear in a single model message
+   - Check image history to see all individual images
+
+3. **Step-Level Model Selection**:
+   - Serial mode with 3 steps
+   - Step 1: Use "Gemini 3 Pro"
+   - Step 2: Use "Gemini 2.5 Flash"
+   - Step 3: Use "Default"
+   - Verify each step uses the specified model
+
 ### Testing Batch Generation
 1. **Normal Batch**:
    - Click "普通批量" button
    - Select count (1-4)
    - Enter prompt + optional images
    - Send to generate N variations
-
-2. **Multi-Image Single Prompt**:
-   - Upload 3+ images
-   - Click "多图单词" button
-   - Enter one prompt
-   - Each image generates separately with same prompt
-
-3. **Image-Multi-Prompt**:
-   - Upload 3+ images
-   - Click "图片对多词" button
-   - Enter prompts separated by commas: "prompt A, prompt B, prompt C"
-   - Image1 pairs with prompt A, Image2 with B, etc.
 
 ### Testing Prompt Features
 1. **Quick Picker**: Type `/t` in input to trigger selector

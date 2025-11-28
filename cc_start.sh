@@ -91,8 +91,8 @@ echo ""
 unset CI
 
 # 确保工作目录存在
-mkdir -p /workspace/project
-cd /workspace/project
+# mkdir -p /workspace/project
+# cd /workspace/project
 
 # 检查 claude-code 是否已安装
 if ! command -v claude &> /dev/null; then

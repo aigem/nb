@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ImagePlus, X, Square, Gamepad2, Sparkles, Layers } from 'lucide-react';
+import { Send, ImagePlus, X, Square, Gamepad2, Sparkles, Layers, Workflow } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useUiStore } from '../store/useUiStore';
 import { Attachment } from '../types';
@@ -10,10 +10,11 @@ interface Props {
   onStop: () => void;
   onOpenArcade?: () => void;
   isArcadeOpen?: boolean;
+  onOpenPipeline?: () => void;
   disabled: boolean;
 }
 
-export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArcadeOpen, disabled }) => {
+export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArcadeOpen, onOpenPipeline, disabled }) => {
   const { inputText, setInputText } = useAppStore();
   const { togglePromptLibrary, isPromptLibraryOpen, batchMode, batchCount, setBatchMode, setBatchCount, pendingReferenceImage, setPendingReferenceImage } = useUiStore();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -201,28 +202,19 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                普通批量
+                批量生成
               </button>
-              <button
-                onClick={() => setBatchMode(batchMode === 'multi-image' ? 'off' : 'multi-image')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  batchMode === 'multi-image'
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                多图单词
-              </button>
-              <button
-                onClick={() => setBatchMode(batchMode === 'image-multi-prompt' ? 'off' : 'image-multi-prompt')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  batchMode === 'image-multi-prompt'
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                图片对多词
-              </button>
+
+              {/* Pipeline Button */}
+              {onOpenPipeline && (
+                <button
+                  onClick={onOpenPipeline}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-800/40"
+                >
+                  <Workflow className="h-3 w-3 inline mr-1" />
+                  批量编排(实验功能)
+                </button>
+              )}
 
               {batchMode === 'normal' && (
                 <div className="flex items-center gap-1 ml-2">
@@ -243,11 +235,9 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
                 </div>
               )}
 
-              {batchMode !== 'off' && (
+              {batchMode === 'normal' && (
                 <span className="text-xs text-amber-600 dark:text-amber-400 ml-auto">
-                  {batchMode === 'normal' && `将生成 ${batchCount} 次`}
-                  {batchMode === 'multi-image' && attachments.length > 0 && `将生成 ${attachments.length} 张`}
-                  {batchMode === 'image-multi-prompt' && attachments.length > 0 && `将生成 ${attachments.length} 张（用 --- 分隔多个提示词）`}
+                  将生成 {batchCount} 次
                 </span>
               )}
             </div>

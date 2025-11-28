@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useUiStore } from '../store/useUiStore';
 import { InputArea } from './InputArea';
+import { PipelineModal } from './PipelineModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { streamGeminiResponse, generateContent } from '../services/geminiService';
 import { convertMessagesToHistory } from '../utils/messageUtils';
@@ -33,6 +34,7 @@ export const ChatInterface: React.FC = () => {
   const [showArcade, setShowArcade] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [isPipelineModalOpen, setIsPipelineModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -40,8 +42,14 @@ export const ChatInterface: React.FC = () => {
     if (isLoading) {
         setShowArcade(true);
         setIsExiting(false);
+    } else if (!isLoading && showArcade) {
+        // 当生成完成时，延迟 2.5 秒自动关闭小游戏
+        const timer = setTimeout(() => {
+            handleCloseArcade();
+        }, 2500);
+        return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [isLoading, showArcade]);
 
   const handleCloseArcade = () => {
     setIsExiting(true);
@@ -74,48 +82,12 @@ export const ChatInterface: React.FC = () => {
     }
 
     // 批量生成处理
-    if (batchMode !== 'off') {
-      let tasks: Array<{ text: string; attachments: Attachment[] }> = [];
+    if (batchMode === 'normal') {
+      const tasks: Array<{ text: string; attachments: Attachment[] }> = [];
 
-      if (batchMode === 'normal') {
-        // 普通批量：重复 N 次
-        for (let i = 0; i < batchCount; i++) {
-          tasks.push({ text, attachments });
-        }
-      } else if (batchMode === 'multi-image') {
-        // 多图单词：每张图片单独生成
-        if (attachments.length === 0) {
-          addToast('请至少上传一张图片以使用多图单词模式', 'error');
-          return;
-        }
-        tasks = attachments.map(att => ({
-          text,
-          attachments: [att]
-        }));
-      } else if (batchMode === 'image-multi-prompt') {
-        // 图片对多词：每张图片配对一个提示词
-        if (attachments.length === 0) {
-          addToast('请至少上传一张图片以使用图片对多词模式', 'error');
-          return;
-        }
-        if (!text.trim()) {
-          addToast('请输入提示词（多个提示词用 --- 分隔）', 'error');
-          return;
-        }
-
-        // 分割提示词（使用 --- 作为分隔符）
-        const prompts = text.split(/---+/).map(p => p.trim()).filter(p => p.length > 0);
-
-        if (prompts.length === 0) {
-          addToast('请输入有效的提示词', 'error');
-          return;
-        }
-
-        // 每张图片配对一个提示词（如果提示词不够，循环使用）
-        tasks = attachments.map((att, index) => ({
-          text: prompts[index % prompts.length],
-          attachments: [att]
-        }));
+      // 普通批量：重复 N 次
+      for (let i = 0; i < batchCount; i++) {
+        tasks.push({ text, attachments });
       }
 
       // 执行批量任务
@@ -311,7 +283,7 @@ export const ChatInterface: React.FC = () => {
 
     const index = messages.findIndex(m => m.id === id);
     if (index === -1) return;
-    
+
     const message = messages[index];
     let targetUserMessage: ChatMessage | undefined;
     let sliceIndex = -1;
@@ -326,14 +298,14 @@ export const ChatInterface: React.FC = () => {
             sliceIndex = index - 2;
         }
     }
-    
+
     if (!targetUserMessage) return;
 
     // Extract content
     const textPart = targetUserMessage.parts.find(p => p.text);
     const text = textPart ? textPart.text : '';
     const imageParts = targetUserMessage.parts.filter(p => p.inlineData);
-    
+
     const attachments: Attachment[] = imageParts.map(p => ({
         file: new File([], "placeholder"), // Dummy file object
         preview: `data:${p.inlineData!.mimeType};base64,${p.inlineData!.data}`,
@@ -346,6 +318,234 @@ export const ChatInterface: React.FC = () => {
 
     // Resend
     handleSend(text || '', attachments);
+  };
+
+  // Pipeline 执行逻辑 (支持串行和并行)
+  const handleExecutePipeline = async (
+    mode: 'serial' | 'parallel',
+    steps: Array<{ id: string; prompt: string; modelName?: string; status: string }>,
+    initialAttachments: Attachment[]
+  ) => {
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+      addToast('请先输入 API Key', 'error');
+      return;
+    }
+
+    if (mode === 'serial') {
+      // 串行模式: 依次执行
+      await executeSerialPipeline(steps, initialAttachments);
+    } else {
+      // 并行模式: 同时执行
+      await executeParallelPipeline(steps, initialAttachments);
+    }
+  };
+
+  // 串行执行
+  const executeSerialPipeline = async (
+    steps: Array<{ prompt: string; modelName?: string }>,
+    initialAttachments: Attachment[]
+  ) => {
+    setBatchProgress({ current: 0, total: steps.length });
+    addToast(`开始串行编排，共 ${steps.length} 步`, 'info');
+
+    let currentAttachments = initialAttachments;
+    const originalSettings = useAppStore.getState().settings;
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      setBatchProgress({ current: i + 1, total: steps.length });
+
+      try {
+        // 如果步骤指定了模型，临时切换模型
+        if (step.modelName) {
+          useAppStore.getState().updateSettings({ modelName: step.modelName });
+        }
+
+        // 执行单次生成
+        await executeSingleGeneration(step.prompt, currentAttachments);
+
+        // 恢复原始模型设置
+        if (step.modelName) {
+          useAppStore.getState().updateSettings({ modelName: originalSettings.modelName });
+        }
+
+        // 等待一小段时间确保消息已添加到store
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 获取最新生成的模型消息
+        const currentMessages = useAppStore.getState().messages;
+        const lastModelMessage = currentMessages[currentMessages.length - 1];
+
+        if (lastModelMessage && lastModelMessage.role === 'model') {
+          // 提取生成的图片作为下一步的输入
+          const generatedImages = lastModelMessage.parts
+            .filter(p => p.inlineData && !p.thought)
+            .map(p => ({
+              file: new File([], "generated"),
+              preview: `data:${p.inlineData!.mimeType};base64,${p.inlineData!.data}`,
+              base64Data: p.inlineData!.data || '',
+              mimeType: p.inlineData!.mimeType || ''
+            }));
+
+          if (generatedImages.length > 0) {
+            currentAttachments = generatedImages;
+          } else {
+            addToast(`步骤 ${i + 1} 未生成图片，使用原图继续`, 'info');
+          }
+        }
+
+        // 每个步骤之间延迟，避免请求过快
+        if (i < steps.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`Pipeline 步骤 ${i + 1} 失败:`, error);
+        addToast(`步骤 ${i + 1} 失败，终止编排`, 'error');
+        // 恢复原始设置
+        useAppStore.getState().updateSettings({ modelName: originalSettings.modelName });
+        break;
+      }
+    }
+
+    setBatchProgress({ current: 0, total: 0 });
+    addToast(`串行编排完成！`, 'success');
+  };
+
+  // 并行执行 - 优化版：所有结果显示在一条消息中
+  const executeParallelPipeline = async (
+    steps: Array<{ prompt: string; modelName?: string }>,
+    initialAttachments: Attachment[]
+  ) => {
+    setBatchProgress({ current: 0, total: steps.length });
+    addToast(`开始并行编排，共 ${steps.length} 个任务`, 'info');
+
+    const originalSettings = useAppStore.getState().settings;
+
+    // 1. 创建用户消息（显示并行编排信息）
+    const userMsgId = Date.now().toString();
+    const userParts: Part[] = [];
+
+    // 添加初始图片
+    initialAttachments.forEach(att => {
+      userParts.push({
+        inlineData: {
+          mimeType: att.mimeType,
+          data: att.base64Data
+        }
+      });
+    });
+
+    // 添加文本说明
+    const promptSummary = steps.map((s, i) => `${i + 1}. ${s.prompt}`).join('\n');
+    userParts.push({
+      text: `🌳 并行编排 (${steps.length}个任务):\n\n${promptSummary}`
+    });
+
+    const userMessage: ChatMessage = {
+      id: userMsgId,
+      role: 'user',
+      parts: userParts,
+      timestamp: Date.now()
+    };
+    addMessage(userMessage);
+
+    // 2. 创建模型占位消息
+    const modelMessageId = (Date.now() + 1).toString();
+    const modelMessage: ChatMessage = {
+      id: modelMessageId,
+      role: 'model',
+      parts: [],
+      timestamp: Date.now()
+    };
+    addMessage(modelMessage);
+
+    // 3. 收集所有生成的图片
+    const allGeneratedParts: Part[] = [];
+    let completed = 0;
+
+    // 为每个步骤创建独立的执行任务
+    const tasks = steps.map(async (step, index) => {
+      try {
+        // 临时切换模型
+        if (step.modelName) {
+          useAppStore.getState().updateSettings({ modelName: step.modelName });
+        }
+
+        // 准备临时历史记录
+        const currentMessages = useAppStore.getState().messages;
+        const history = convertMessagesToHistory(currentMessages.slice(0, -2)); // 排除刚添加的两条消息
+
+        // 准备图片数据
+        const imagesPayload = initialAttachments.map(a => ({
+          base64Data: a.base64Data,
+          mimeType: a.mimeType
+        }));
+
+        // 执行生成
+        const result = await generateContent(
+          apiKey,
+          history,
+          step.prompt,
+          imagesPayload,
+          step.modelName ? { ...settings, modelName: step.modelName } : settings,
+          new AbortController().signal
+        );
+
+        // 恢复原始设置
+        if (step.modelName) {
+          useAppStore.getState().updateSettings({ modelName: originalSettings.modelName });
+        }
+
+        // 收集生成的部分
+        allGeneratedParts.push(...result.modelParts);
+
+        // 更新进度
+        completed++;
+        setBatchProgress({ current: completed, total: steps.length });
+
+        // 实时更新模型消息
+        updateLastMessage(allGeneratedParts, false, undefined);
+
+        // 将生成的图片添加到历史记录
+        const imageParts = result.modelParts.filter(p => p.inlineData && !p.thought);
+        imageParts.forEach(part => {
+          if (part.inlineData) {
+            addImageToHistory({
+              id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              mimeType: part.inlineData.mimeType,
+              base64Data: part.inlineData.data,
+              prompt: step.prompt,
+              timestamp: Date.now(),
+              modelName: step.modelName || settings.modelName,
+            });
+          }
+        });
+
+        // 延迟避免过快请求
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+      } catch (error) {
+        console.error(`并行任务 ${index + 1} 失败:`, error);
+        // 添加错误文本
+        allGeneratedParts.push({
+          text: `❌ 步骤 ${index + 1} 失败: ${error instanceof Error ? error.message : '未知错误'}`
+        });
+        updateLastMessage(allGeneratedParts, false, undefined);
+
+        completed++;
+        setBatchProgress({ current: completed, total: steps.length });
+      }
+    });
+
+    // 等待所有任务完成
+    await Promise.all(tasks);
+
+    // 恢复原始设置
+    useAppStore.getState().updateSettings({ modelName: originalSettings.modelName });
+
+    setBatchProgress({ current: 0, total: 0 });
+    addToast(`并行编排完成！共生成 ${allGeneratedParts.filter(p => p.inlineData).length} 张图片`, 'success');
   };
 
   return (
@@ -415,12 +615,20 @@ export const ChatInterface: React.FC = () => {
         )}
       </div>
 
-      <InputArea 
-        onSend={handleSend} 
-        onStop={handleStop} 
+      <InputArea
+        onSend={handleSend}
+        onStop={handleStop}
         disabled={isLoading}
         onOpenArcade={handleToggleArcade}
         isArcadeOpen={showArcade}
+        onOpenPipeline={() => setIsPipelineModalOpen(true)}
+      />
+
+      {/* Pipeline Modal */}
+      <PipelineModal
+        isOpen={isPipelineModalOpen}
+        onClose={() => setIsPipelineModalOpen(false)}
+        onExecute={handleExecutePipeline}
       />
     </div>
   );

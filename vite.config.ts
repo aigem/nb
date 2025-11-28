@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          '/api/prompts': {
+            target: 'https://cdn.jsdelivr.net',
+            changeOrigin: true,
+            rewrite: (path) => '/gh/glidea/banana-prompt-quicker@main/prompts.json',
+            secure: true,
+          },
+        },
       },
       plugins: [
         preact(),

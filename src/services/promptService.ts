@@ -1,11 +1,20 @@
 import { PromptItem } from '../types';
 
-// 使用 jsDelivr CDN 加速访问 GitHub 内容（支持国内访问）
-const GITHUB_PROMPT_URL = 'https://cdn.jsdelivr.net/gh/glidea/banana-prompt-quicker@main/prompts.json';
-const API_PROMPT_URL = '/api/prompts';
+// 多重数据源（按优先级排序）
+const PROMPT_SOURCES = [
+  '/api/prompts', // Vercel Edge Function (开发环境通过 Vite 代理到 jsDelivr)
+  'https://cdn.jsdelivr.net/gh/glidea/banana-prompt-quicker@main/prompts.json', // jsDelivr CDN
+  'https://raw.githubusercontent.com/glidea/banana-prompt-quicker/main/prompts.json', // GitHub Raw
+  'https://glidea.github.io/banana-prompt-quicker/prompts.json', // GitHub Pages 备用
+];
+
 const CACHE_KEY = 'prompt_library_cache';
-const CACHE_VERSION = 'v2'; // 更改版本号会清除旧缓存
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时
+const CACHE_VERSION = 'v3'; // 更改版本号会清除旧缓存
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7天（提示词数据不常更新）
+
+// 内存缓存层（避免重复解析 localStorage）
+let memoryCache: PromptItem[] | null = null;
+let memoryCacheTimestamp = 0;
 
 interface CachedData {
   prompts: PromptItem[];
@@ -14,61 +23,125 @@ interface CachedData {
 }
 
 /**
- * 从缓存或 API 获取提示词数据
+ * 从缓存或 API 获取提示词数据（优化版：内存缓存 + 多源备用 + 预加载）
  */
 export async function fetchPrompts(): Promise<PromptItem[]> {
   try {
-    // 尝试从缓存读取
+    // 1. 首先检查内存缓存（最快）
+    const memoryCached = getMemoryCachedPrompts();
+    if (memoryCached) {
+      console.log('✓ Prompts loaded from memory cache');
+      return memoryCached;
+    }
+
+    // 2. 检查 localStorage 缓存
     const cached = getCachedPrompts();
     if (cached) {
+      console.log('✓ Prompts loaded from localStorage cache');
+      // 更新内存缓存
+      memoryCache = cached;
+      memoryCacheTimestamp = Date.now();
       return cached;
     }
 
-    // 缓存过期或不存在,从 API 获取
-    let response;
-    try {
-      // 优先尝试使用 Vercel Edge Function 代理 (国内访问更快)
-      response = await fetch(API_PROMPT_URL);
-      if (!response.ok) throw new Error('API request failed');
-    } catch (e) {
-      console.warn('Failed to fetch from API proxy, falling back to GitHub direct link:', e);
-      // 如果 API 失败 (例如在本地开发环境且未配置代理, 或者 API 挂了), 回退到直接请求 GitHub
-      response = await fetch(GITHUB_PROMPT_URL);
-    }
+    // 3. 缓存过期或不存在，从多个源依次尝试获取
+    console.log('Cache miss, fetching from remote sources...');
+    const validPrompts = await fetchFromMultipleSources();
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // 验证数据格式
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid data format: expected array');
-    }
-
-    // 过滤并验证每个提示词项
-    const validPrompts: PromptItem[] = data.filter(isValidPromptItem);
-
-    // 缓存数据
+    // 4. 缓存数据到内存和 localStorage
+    memoryCache = validPrompts;
+    memoryCacheTimestamp = Date.now();
     cachePrompts(validPrompts);
 
+    console.log(`✓ Fetched ${validPrompts.length} prompts successfully`);
     return validPrompts;
   } catch (error) {
-    console.error('Failed to fetch prompts:', error);
+    console.error('❌ Failed to fetch prompts:', error);
 
-    // 如果网络请求失败,尝试返回过期的缓存数据
+    // 如果所有源都失败，尝试返回过期的缓存数据（降级策略）
     const staleCache = getStaleCache();
     if (staleCache) {
+      console.warn('⚠ Using stale cache as fallback');
       return staleCache;
     }
 
-    throw new Error('无法获取提示词数据,请检查网络连接后重试');
+    throw new Error('无法获取提示词数据，请检查网络连接后重试');
   }
 }
 
 /**
- * 从缓存读取提示词(仅返回未过期的数据)
+ * 从多个数据源依次尝试获取（容错机制）
+ */
+async function fetchFromMultipleSources(): Promise<PromptItem[]> {
+  const errors: string[] = [];
+
+  for (let i = 0; i < PROMPT_SOURCES.length; i++) {
+    const source = PROMPT_SOURCES[i];
+    try {
+      console.log(`Trying source ${i + 1}/${PROMPT_SOURCES.length}: ${source}`);
+
+      const response = await fetch(source, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        // 10秒超时
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // 验证数据格式
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid data format: expected array');
+      }
+
+      // 过滤并验证每个提示词项
+      const validPrompts: PromptItem[] = data.filter(isValidPromptItem);
+
+      if (validPrompts.length === 0) {
+        throw new Error('No valid prompts found in data');
+      }
+
+      console.log(`✓ Successfully fetched from source ${i + 1}: ${validPrompts.length} prompts`);
+      return validPrompts;
+    } catch (error) {
+      const errorMsg = `Source ${i + 1} failed: ${error instanceof Error ? error.message : String(error)}`;
+      errors.push(errorMsg);
+      console.warn(errorMsg);
+      // 继续尝试下一个源
+      continue;
+    }
+  }
+
+  // 所有源都失败
+  throw new Error(`All sources failed:\n${errors.join('\n')}`);
+}
+
+/**
+ * 从内存缓存读取提示词（性能最优）
+ */
+function getMemoryCachedPrompts(): PromptItem[] | null {
+  if (!memoryCache || memoryCache.length === 0) {
+    return null;
+  }
+
+  const now = Date.now();
+  // 检查内存缓存是否过期
+  if (now - memoryCacheTimestamp > CACHE_DURATION) {
+    memoryCache = null;
+    memoryCacheTimestamp = 0;
+    return null;
+  }
+
+  return memoryCache;
+}
+
+/**
+ * 从 localStorage 缓存读取提示词(仅返回未过期的数据)
  */
 function getCachedPrompts(): PromptItem[] | null {
   try {
@@ -155,12 +228,33 @@ export function getCategories(prompts: PromptItem[]): string[] {
 }
 
 /**
- * 清除缓存
+ * 清除所有缓存（内存 + localStorage）
  */
 export function clearPromptsCache(): void {
   try {
+    // 清除内存缓存
+    memoryCache = null;
+    memoryCacheTimestamp = 0;
+    // 清除 localStorage 缓存
     localStorage.removeItem(CACHE_KEY);
+    console.log('✓ Prompts cache cleared');
   } catch (error) {
     console.error('Failed to clear cache:', error);
   }
+}
+
+/**
+ * 预加载提示词数据（后台静默加载，不阻塞UI）
+ */
+export function preloadPrompts(): void {
+  // 使用 setTimeout 确保不阻塞主线程
+  setTimeout(async () => {
+    try {
+      console.log('🔄 Preloading prompts in background...');
+      await fetchPrompts();
+    } catch (error) {
+      // 预加载失败静默处理，不影响用户体验
+      console.warn('Preload failed (non-critical):', error);
+    }
+  }, 2000); // 应用启动 2 秒后预加载
 }

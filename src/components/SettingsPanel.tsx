@@ -85,59 +85,59 @@ export const SettingsPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">设置</h2>
+      <div className="flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white dark:bg-gray-950 z-10 pb-2">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">设置</h2>
         <button onClick={toggleSettings} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg sm:hidden">
           <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 
-      <div className="space-y-8 flex-1">
+      <div className="space-y-4 sm:space-y-8 flex-1 overflow-y-auto pb-safe">
         {/* Balance Section */}
         {apiKey && (
-          <section className="p-4 rounded-xl bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">API 余额</h3>
+          <section className="p-3 sm:p-4 rounded-xl bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">API 余额</h3>
               </div>
               <button
                 onClick={handleFetchBalance}
                 disabled={loadingBalance}
-                className="p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 disabled:opacity-50 transition"
+                className="p-1 sm:p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 disabled:opacity-50 transition"
                 title="刷新余额"
               >
-                <RefreshCw className={`h-4 w-4 ${loadingBalance ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${loadingBalance ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
             {loadingBalance && !balance ? (
-              <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-3">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center py-2 sm:py-3">
                 查询中...
               </div>
             ) : balance ? (
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2.5 text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">总额度</div>
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">总额度</div>
+                  <div className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
                     {formatBalance(balance.hardLimitUsd, balance.isUnlimited)}
                   </div>
                 </div>
-                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2.5 text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">已使用</div>
-                  <div className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">已使用</div>
+                  <div className="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400 truncate">
                     {formatBalance(balance.usage, balance.isUnlimited)}
                   </div>
                 </div>
-                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2.5 text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">剩余</div>
-                  <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">剩余</div>
+                  <div className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400 truncate">
                     {formatBalance(balance.remaining, balance.isUnlimited)}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
+              <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 text-center py-1.5 sm:py-2">
                 点击刷新按钮查询余额
               </div>
             )}
@@ -145,34 +145,47 @@ export const SettingsPanel: React.FC = () => {
         )}
 
         {/* Resolution */}
-        <section className='mb-4'>
-          <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">图像分辨率</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['1K', '2K', '4K'] as const).map((res) => (
-              <button
-                key={res}
-                onClick={() => {
-                  if (res === '2K' || res === '4K') {
-                    updateSettings({ resolution: res, streamResponse: false });
-                  } else {
-                    updateSettings({ resolution: res });
-                  }
-                }}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                  settings.resolution === res
-                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                    : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'
-                }`}
-              >
-                {res}
-              </button>
-            ))}
+        <section>
+          <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">图像分辨率</label>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {(['1K', '2K', '4K'] as const).map((res) => {
+              // 只有 gemini-3-pro-image-preview 支持分辨率选择
+              const isResolutionSupported = (settings.modelName || 'gemini-3-pro-image-preview') === 'gemini-3-pro-image-preview';
+              const isDisabled = !isResolutionSupported;
+
+              return (
+                <button
+                  key={res}
+                  onClick={() => {
+                    if (isDisabled) return;
+                    if (res === '2K' || res === '4K') {
+                      updateSettings({ resolution: res, streamResponse: false });
+                    } else {
+                      updateSettings({ resolution: res });
+                    }
+                  }}
+                  disabled={isDisabled}
+                  className={`rounded-lg border px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium transition ${
+                    settings.resolution === res
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'
+                  } ${isDisabled ? 'opacity-40 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-800' : ''}`}
+                >
+                  {res}
+                </button>
+              );
+            })}
           </div>
+          {(settings.modelName || 'gemini-3-pro-image-preview') !== 'gemini-3-pro-image-preview' && (
+            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1.5 sm:mt-2">
+              ⚠️ 当前模型不支持分辨率选择，仅 Gemini 3 Pro 支持此功能
+            </p>
+          )}
         </section>
 
         {/* Model Selection */}
         <section>
-          <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">模型选择</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">模型选择</label>
           <div className="space-y-2">
             {([
               { name: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro' },
@@ -184,7 +197,7 @@ export const SettingsPanel: React.FC = () => {
                 <button
                   key={model.name}
                   onClick={() => updateSettings({ modelName: model.name })}
-                  className={`w-full rounded-lg border px-4 py-2.5 text-sm font-medium text-left transition ${
+                  className={`w-full rounded-lg border px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-left transition ${
                     isActive
                       ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
                       : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700'
@@ -199,8 +212,8 @@ export const SettingsPanel: React.FC = () => {
 
         {/* Aspect Ratio */}
         <section>
-          <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">长宽比</label>
-          <div className="grid grid-cols-3 gap-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">长宽比</label>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {(['Auto', '1:1', '3:4', '4:3', '9:16', '16:9', '21:9'] as const).map((ratio) => {
               const isActive = settings.aspectRatio === ratio;
               const ratioPreviewStyles: Record<string, string> = {
@@ -217,7 +230,7 @@ export const SettingsPanel: React.FC = () => {
                 <button
                   key={ratio}
                   onClick={() => updateSettings({ aspectRatio: ratio })}
-                  className={`flex flex-col items-center justify-center gap-2 rounded-lg border p-3 transition ${
+                  className={`flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-lg border p-2 sm:p-3 transition ${
                     isActive
                       ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
                       : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900'
@@ -228,7 +241,7 @@ export const SettingsPanel: React.FC = () => {
                       isActive ? 'border-amber-400 bg-amber-100 dark:bg-amber-400/20' : 'border-gray-400 dark:border-gray-600 bg-gray-200 dark:bg-gray-800'
                     } ${ratioPreviewStyles[ratio]}`}
                   />
-                  <span className="text-xs font-medium">{ratio}</span>
+                  <span className="text-[10px] sm:text-xs font-medium">{ratio}</span>
                 </button>
               );
             })}
@@ -238,7 +251,7 @@ export const SettingsPanel: React.FC = () => {
         {/* Streaming */}
         <section>
           <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">流式响应</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">流式响应</span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -259,55 +272,55 @@ export const SettingsPanel: React.FC = () => {
                 }}
                  className="sr-only peer"
               />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+              <div className="h-5 w-9 sm:h-6 sm:w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
             </div>
           </label>
-          <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+          <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
              逐个 token 流式传输模型的响应。对于一次性响应请禁用。
           </p>
         </section>
         
         {/* App Installation */}
         {installPrompt && (
-          <section className="pt-4 border-t border-gray-200 dark:border-gray-800 mb-4">
+          <section className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-800">
             <button
               onClick={handleInstallClick}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 p-3 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition"
+              className="w-full flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 p-2.5 sm:p-3 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition"
             >
-              <Download className="h-4 w-4" />
-              <span>安装 UnDraw 应用</span>
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">安装 UnDraw 应用</span>
             </button>
-            <p className="mt-2 text-xs text-center text-gray-400 dark:text-gray-500">
+            <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-center text-gray-400 dark:text-gray-500">
               安装到您的设备以获得原生应用体验。
             </p>
           </section>
         )}
 
         {/* Share Configuration */}
-        <section className="pt-4 border-t border-gray-200 dark:border-gray-800 mb-4">
-           <div className="flex gap-2 mb-2">
+        <section className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-800">
+           <div className="flex gap-1.5 sm:gap-2">
              <button
                onClick={handleCreateBookmark}
-               className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-3 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition"
+               className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 p-2.5 sm:p-3 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition"
              >
-               <Share2 className="h-4 w-4" />
-               <span className="text-xs sm:text-sm">更新 URL</span>
+               <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+               <span className="text-[10px] sm:text-xs">更新 URL</span>
              </button>
 
              <a
                href={getBookmarkUrl()}
                onClick={(e) => e.preventDefault()} // Prevent navigation, strictly for dragging
-               className="flex-1 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-3 text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing transition text-sm font-medium"
+               className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-2.5 sm:p-3 text-gray-500 dark:text-gray-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 cursor-grab active:cursor-grabbing transition"
                title="将此按钮拖动到书签栏"
              >
-               <Bookmark className="h-4 w-4" />
-               <span className="text-xs sm:text-sm">拖动到书签</span>
+               <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+               <span className="text-[10px] sm:text-xs">拖动到书签</span>
              </a>
            </div>
         </section>
 
         {/* Data Management */}
-        <section className="pt-4 border-t border-gray-200 dark:border-gray-800">
+        <section className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-800">
             <button
                 onClick={() => {
                     showDialog({
@@ -322,10 +335,10 @@ export const SettingsPanel: React.FC = () => {
                         }
                     });
                 }}
-                className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/5 p-3 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10 transition mb-3"
+                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/5 p-2.5 sm:p-3 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10 transition mb-2 sm:mb-3"
             >
-                <Trash2 className="h-4 w-4" />
-                <span>清除对话</span>
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">清除对话</span>
             </button>
 
             {apiKey && (
@@ -342,16 +355,16 @@ export const SettingsPanel: React.FC = () => {
                           }
                       });
                   }}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  className="w-full flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-2.5 sm:p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
               >
-                  <LogOut className="h-4 w-4" />
-                  <span>清除 API Key</span>
+                  <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">清除 API Key</span>
               </button>
             )}
         </section>
 
         {/* Info */}
-        <div className="mt-1 pb-4 text-center text-[10px] text-gray-400 dark:text-gray-600 space-y-1">
+        <div className="mt-1 pb-2 sm:pb-4 text-center text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-600 space-y-0.5 sm:space-y-1">
            <p>模型: {settings.modelName || 'gemini-3-pro-image-preview'}</p>
            <p className="truncate px-4">接口地址: {settings.customEndpoint || 'https://api.kuai.host'}</p>
         </div>

@@ -17,7 +17,7 @@ export interface DialogOptions {
   type?: 'confirm' | 'alert';
 }
 
-export type BatchMode = 'off' | 'normal' | 'multi-image' | 'image-multi-prompt';
+export type BatchMode = 'off' | 'normal';
 
 export interface PendingReferenceImage {
   base64Data: string;

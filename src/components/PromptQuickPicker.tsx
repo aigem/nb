@@ -262,6 +262,14 @@ export const PromptQuickPicker: React.FC<PromptQuickPickerProps> = ({
                       <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 font-mono">Enter</kbd>
                       选择
                     </span>
+                    提示词来源于： <a
+                      href="https://github.com/glidea/banana-prompt-quicker"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-amber-600 dark:hover:text-amber-400"
+                    >
+                      Banana Prompt Quicker
+                    </a>
                   </div>
                   <span>{filteredPrompts.length} 个结果</span>
                 </div>

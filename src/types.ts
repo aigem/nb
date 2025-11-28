@@ -59,3 +59,26 @@ export interface PromptItem {
   mode: 'edit' | 'generate';
   category: string;
 }
+
+// Pipeline 相关类型
+export interface PipelineStep {
+  id: string;
+  prompt: string;
+  modelName?: string; // 步骤可以指定使用的模型
+  status: 'pending' | 'running' | 'completed' | 'error';
+  resultImageId?: string;
+  error?: string;
+}
+
+export interface Pipeline {
+  mode: 'serial' | 'parallel'; // 串行或并行模式
+  steps: PipelineStep[];
+  initialAttachments: Attachment[]; // 支持多张初始图片(最多14张)
+}
+
+export interface PipelineTemplate {
+  name: string;
+  description: string;
+  mode: 'serial' | 'parallel';
+  steps: string[]; // 仅包含提示词
+}
