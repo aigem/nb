@@ -58,8 +58,20 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose }) => {
         </div>
         
         <h2 className="mb-2 text-center text-2xl font-bold text-gray-900 dark:text-white">输入 API Key</h2>
-        <p className="mb-8 text-center text-gray-500 dark:text-gray-400">
+        <p className="mb-8 text-sm text-center text-gray-500 dark:text-gray-400">
           此应用 100% 在您的浏览器中运行。您的 Key 仅存储在本地设备上。
+        </p>
+        <p className="mb-8 text-center text-gray-500 dark:text-gray-400">
+          获取API Key：
+          <a 
+            href="https://api.kuai.host/register?aff=z2C8" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center text-m text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition"
+          >
+            注册登录酷爱API后创建分组为【限时特价】的api密钥即可。
+            <ExternalLink className="ml-1 h-3 w-3" />
+          </a>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +83,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose }) => {
               value={inputKey}
               onChange={(e) => setInputKey(e.currentTarget.value)}
               className="w-full rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
-              placeholder="AIzaSy..."
+              placeholder="sk-xxx..."
               autoFocus
             />
           </div>
@@ -179,12 +191,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose }) => {
 
         <div className="mt-6 flex justify-center">
           <a 
-            href="https://api.kuai.host/console/token" 
+            href="https://cnb.cool/fuliai/comfyui/-/issues/11" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center text-sm text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition"
           >
-            <span>获取 Gemini API Key</span>
+            <span>加入交流群</span>
             <ExternalLink className="ml-1 h-3 w-3" />
           </a>
         </div>
