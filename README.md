@@ -100,7 +100,7 @@
 
    ```bash
    git clone https://github.com/aigem/nb.git
-   cd cNB
+   cd nb
    ```
 
 2. **安装依赖**
