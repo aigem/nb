@@ -117,6 +117,52 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose }) => {
                       placeholder="gemini-3-pro-image-preview"
                     />
                   </div>
+
+                  {/* Beta Features Warning */}
+                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Beta 功能</span>
+                      <span className="text-xs text-gray-400">谨慎开启</span>
+                    </div>
+
+                    {/* Google Search Grounding */}
+                    <div className="mb-3">
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-300">Google 搜索定位</span>
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={settings.useGrounding}
+                            onChange={(e) => updateSettings({ useGrounding: e.currentTarget.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="h-5 w-9 rounded-full bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+                        </div>
+                      </label>
+                      <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+                        允许 Gemini 通过 Google 搜索获取实时信息
+                      </p>
+                    </div>
+
+                    {/* Thinking Process */}
+                    <div>
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-300">显示思考过程</span>
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={settings.enableThinking}
+                            onChange={(e) => updateSettings({ enableThinking: e.currentTarget.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="h-5 w-9 rounded-full bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+                        </div>
+                      </label>
+                      <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+                        显示模型的内部思考过程。部分模型不支持此功能
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -235,44 +235,6 @@ export const SettingsPanel: React.FC = () => {
           </div>
         </section>
 
-        {/* Grounding */}
-        <section>
-          <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">Google 搜索定位</span>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={settings.useGrounding}
-                onChange={(e) => updateSettings({ useGrounding: (e.target as HTMLInputElement).checked })}
-                className="sr-only peer"
-              />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
-            </div>
-          </label>
-          <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-            允许 Gemini 通过 Google 搜索获取实时信息。
-          </p>
-        </section>
-
-        {/* Thinking Process */}
-        <section>
-          <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">显示思考过程</span>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={settings.enableThinking}
-                onChange={(e) => updateSettings({ enableThinking: (e.target as HTMLInputElement).checked })}
-                className="sr-only peer"
-              />
-              <div className="h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-800 peer-focus:ring-2 peer-focus:ring-amber-500/50 peer-checked:bg-amber-600 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
-            </div>
-          </label>
-          <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-             显示模型的内部思考过程。对于不支持思考的模型（例如 gemini-2.5-flash-image / Nano Banana），请禁用此选项。
-          </p>
-        </section>
-
         {/* Streaming */}
         <section>
           <label className="flex items-center justify-between cursor-pointer group">

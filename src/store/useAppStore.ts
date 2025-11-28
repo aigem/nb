@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>()(
         resolution: '1K',
         aspectRatio: 'Auto',
         useGrounding: false,
-        enableThinking: true,
+        enableThinking: false,
         streamResponse: true,
         customEndpoint: 'https://api.kuai.host',
         modelName: 'gemini-3-pro-image-preview',

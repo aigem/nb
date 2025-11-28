@@ -53,3 +53,5 @@ Thumbs.db
 
 dev-dist
 
+!.claude/settings.local.json
+需求.md
