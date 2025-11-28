@@ -134,7 +134,7 @@ const App: React.FC = () => {
             rel="noopener noreferrer"
             className="flex h-10 w-10 items-center justify-center overflow-hidden hover:opacity-80 transition-opacity"
           >
-             <img src="/logo.svg" alt="Logo" className="h-full w-full object-cover" />
+             <img src="/kuai.svg" alt="Logo" className="h-full w-full object-cover" />
           </a>
           <div className="hidden sm:block">
             <h1 className="text-lg font-bold tracking-tight text-amber-600 dark:text-amber-400">Nano Banana Pro</h1>

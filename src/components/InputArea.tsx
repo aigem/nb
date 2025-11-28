@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ImagePlus, X, Square, Gamepad2, Sparkles, Layers, Workflow } from 'lucide-react';
+import { Send, ImagePlus, X, Square, Gamepad2, Sparkles, Layers, Workflow, Camera } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useUiStore } from '../store/useUiStore';
 import { Attachment } from '../types';
@@ -21,6 +21,7 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
   const [isDragging, setIsDragging] = useState(false);
   const [isQuickPickerOpen, setIsQuickPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
 
@@ -59,8 +60,9 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.currentTarget.files) {
       await processFiles(Array.from(e.currentTarget.files));
-      // Reset input
+      // Reset inputs
       if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -294,7 +296,17 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
             ref={fileInputRef}
             onChange={handleFileSelect}
           />
-          
+
+          {/* 拍照输入（移动端） */}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            ref={cameraInputRef}
+            onChange={handleFileSelect}
+          />
+
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || attachments.length >= 14}
@@ -302,6 +314,16 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
             title="上传图片"
           >
             <ImagePlus className="h-5 w-5" />
+          </button>
+
+          {/* 拍照按钮（仅移动端显示） */}
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={disabled || attachments.length >= 14}
+            className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-amber-600 dark:hover:text-amber-400 transition disabled:opacity-50 sm:hidden"
+            title="拍照上传"
+          >
+            <Camera className="h-5 w-5" />
           </button>
 
           <button
@@ -368,7 +390,7 @@ export const InputArea: React.FC<Props> = ({ onSend, onStop, onOpenArcade, isArc
              回车发送,Shift + 回车换行。支持粘贴、拖拽或点击上传最多 14 张参考图片。输入 <span className="font-mono text-purple-600 dark:text-purple-400">/t</span> 快速选择提示词。
            </span>
            <span className="sm:hidden">
-             点击发送按钮生成图片。支持上传最多 14 张参考图片。
+             点击发送按钮生成图片。支持上传、拍照最多 14 张参考图片。
            </span>
         </div>
       </div>

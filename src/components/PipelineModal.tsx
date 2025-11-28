@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { X, Plus, Trash2, ImagePlus, ChevronUp, ChevronDown, Sparkles, Palette, Zap, Layers, GitBranch } from 'lucide-react';
+import { X, Plus, Trash2, ImagePlus, ChevronUp, ChevronDown, Sparkles, Palette, Zap, Layers, GitBranch, Camera } from 'lucide-react';
 import { Attachment, PipelineTemplate, PipelineStep } from '../types';
 
 interface Props {
@@ -68,6 +68,7 @@ export const PipelineModal: React.FC<Props> = ({ isOpen, onClose, onExecute }) =
   }]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddStep = () => {
     if (steps.length < 5) {
@@ -105,7 +106,9 @@ export const PipelineModal: React.FC<Props> = ({ isOpen, onClose, onExecute }) =
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.currentTarget.files) {
       await processFiles(Array.from(e.currentTarget.files));
+      // Reset inputs
       if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -304,16 +307,39 @@ export const PipelineModal: React.FC<Props> = ({ isOpen, onClose, onExecute }) =
               multiple
               className="hidden"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={attachments.length >= 14}
-              className="w-full px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ImagePlus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {attachments.length === 0 ? '点击上传图片' : `已上传 ${attachments.length} 张`}
-              </span>
-            </button>
+
+            {/* 拍照输入（移动端） */}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              ref={cameraInputRef}
+              onChange={handleFileSelect}
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={attachments.length >= 14}
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ImagePlus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {attachments.length === 0 ? '点击上传' : `${attachments.length} 张`}
+                </span>
+              </button>
+
+              {/* 拍照按钮（仅移动端显示） */}
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={attachments.length >= 14}
+                className="sm:hidden px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Camera className="h-5 w-5 text-gray-400 mx-auto mb-1" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">拍照</span>
+              </button>
+            </div>
           </section>
 
           {/* 步骤列表 */}

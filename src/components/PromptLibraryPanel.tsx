@@ -57,12 +57,17 @@ export const PromptLibraryPanel: React.FC<PromptLibraryPanelProps> = ({ onSelect
 
   // 选择提示词
   const handleSelectPrompt = (prompt: PromptItem) => {
+    console.log('🎯 handleSelectPrompt called', { prompt: prompt.prompt, currentInputText: inputText });
+
     if (onSelectPrompt) {
+      console.log('📤 Using onSelectPrompt prop');
       onSelectPrompt(prompt.prompt);
     } else {
       // 默认行为：追加到输入框
       const newText = inputText ? `${inputText}\n\n${prompt.prompt}` : prompt.prompt;
+      console.log('✍️ Setting inputText directly', { oldText: inputText, newText });
       setInputText(newText);
+      console.log('✅ setInputText called');
     }
 
     addToast(`已应用提示词：${prompt.title}`, 'success');

@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
         tailwindcss(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['logo.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+          includeAssets: ['kuai.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
           devOptions: {
             enabled: true
           },

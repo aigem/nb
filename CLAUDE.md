@@ -239,6 +239,13 @@ The application uses a **black-gold aesthetic** with amber (#F59E0B) as the prim
 ### Mobile Responsiveness
 The application is fully optimized for mobile devices with responsive design:
 
+**Mobile Camera Upload:**
+- Camera button (📷) visible only on mobile devices (< 640px)
+- Uses HTML5 `capture="environment"` to access device camera
+- Directly opens camera app for photo capture
+- Available in both InputArea and PipelineModal
+- Touch-friendly button sizing and placement
+
 **Settings Panel Mobile Optimization:**
 - Always accessible via Settings button in header (no longer requires API key)
 - Slides in from right as 90% width overlay (shows backdrop on left)
@@ -308,7 +315,7 @@ Implementation uses `pendingReferenceImage` state in `useUiStore` that `InputAre
 ## Testing Features
 
 ### Testing Image Upload and Re-edit
-1. **Upload**: Click camera icon, drag images, or paste anywhere
+1. **Upload**: Click camera icon, drag images, paste anywhere, or **tap camera button to take photo (mobile only)**
 2. **Re-edit from conversation**:
    - Generate an image
    - Hover over the generated image in chat
@@ -324,7 +331,7 @@ Implementation uses `pendingReferenceImage` state in `useUiStore` that `InputAre
 1. **Serial Mode**:
    - Click "批量编排(实验功能)" button (purple)
    - Select "串行模式"
-   - Upload 1 image
+   - Upload 1 image (or tap camera button on mobile to take photo)
    - Add 3 steps with custom prompts
    - Optionally select different models per step
    - Click "开始执行"
@@ -333,7 +340,7 @@ Implementation uses `pendingReferenceImage` state in `useUiStore` that `InputAre
 2. **Parallel Mode**:
    - Click "批量编排(实验功能)" button
    - Select "并行模式"
-   - Upload 1 image
+   - Upload 1 image (or tap camera button on mobile)
    - Click "多风格探索" template
    - Click "开始执行"
    - **Expected**: All 4 generated images appear in a single model message
